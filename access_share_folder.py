@@ -9,7 +9,7 @@ import shutil
 import glob
 
 #настройки логгера
-logging.basicConfig(format = u'%(levelname)-8s [%(asctime)s] %(message)s', level = logging.INFO , filename = u'access_folder.log')
+logging.basicConfig(format = u'%(levelname)-8s [%(asctime)s] %(message)s', level = logging.INFO , filename = u'C:\\scripts\\access_folder.log')
 
 #Скипт для установки прав на папки , всё делается средствами NTFS прав 
 #Для каждой папки берется список вложенных файлов и папок и устанавливаются права указанные в файле , присылаемомо из Lotus Notes в тектсовом файле
@@ -22,7 +22,7 @@ def PathSharedDirectory(folderName, ipServer):
 	#подключаемся к пространству имен WMI
 	c = wmi.WMI(ipServer)
 	for share in c.Win32_Share():
-		#print (share.Caption)
+		print (share.Caption)
 		if share.Caption == folderName:
 			folderPath = share.Path
 			return folderPath
@@ -124,7 +124,7 @@ def ChangeAcl(folderPath,username,mask,rule):
 def main(argv):
 	logging.info(u'###########START#########')
 	#Папка куда Lotus Notes выгружает файлы с данными
-	lotusExchangeDir = '\\\\172.20.20.111\\Exchange\\itroles'
+	lotusExchangeDir = '\\\\172.20.20.131\\Exchange\\itroles'
 	#расширение выгружаемых файлов
 	lotusExchangeTypeFile = '*.txt'
 	#получаем полный путь к файлу с данными, если получаем пустой массив - то значит файла нет, и вызываем исключение
@@ -141,7 +141,7 @@ def main(argv):
 	#ipServer - айпи адрес или доменное имя сервера на котором находятся расщаренные папки
 	#fullPath - путь к папке относительно расшаренной папки
 	action, username, security, folderName, ipServer, fullPath = ParseFile(lotusExchangeFile)
-	logging.info(u'Полученные данные. Имя пользователя: %s Действие: %s Права: %s Имя расшаренной папки: %s',username, action, security, folderName )
+	logging.info(u'Полученные данные. Имя пользователя: %s Действие: %s Права: %s Имя расшаренной папки: %s Адрес сервера: %s',username, action, security, folderName, ipServer )
 	#проверяем существование расшаренной папки, и получаем её адрес на сервере в виде K:\PATH_FOLDER
 	folderPath = PathSharedDirectory(folderName, ipServer)
 	if ( folderPath == 1 ):
@@ -154,16 +154,16 @@ def main(argv):
 	#так же необходимо именно запретить доступ, так как пользователь может находиться в группах, и тогда доступ останется
 	if action == "del":
 		mask = DecodeMask('all')
-		#SetAcl(folderPath,username,mask,action)
+		SetAcl(folderPath,username,mask,action)
 	else:
 		mask = DecodeMask(security)
-		#ChangeAcl(folderPath,username,mask,security)
+		ChangeAcl(folderPath,username,mask,security)
 	#дописать проверку корректной установки прав и только потом удалить файл
 	#после выполнения удаляем файл 
 	#os.remove(lotusExchangeFile)
 	# а пока в рамках тестирования перемещаем просто в другую папку
 	wasteFolder = lotusExchangeDir + '\\waste_files\\'
-	shutil.move(lotusExchangeFile, wasteFolder)
+	#shutil.move(lotusExchangeFile, wasteFolder)
 	logging.info(u'############END##########')
 	return 0
 	
